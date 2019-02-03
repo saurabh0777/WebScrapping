@@ -1,0 +1,52 @@
+# Sample webscrapping code for scrapping the iproperty data
+
+from bs4 import BeautifulSoup as soup
+from urllib.request import urlopen as uReq
+import pandas as pd
+
+url_list = []
+my_url = "https://www.iproperty.com.my/sale/all-residential/"
+
+df = pd.DataFrame()
+
+for i in range(1 , 100):
+    url = "https://www.iproperty.com.my/sale/all-residential/?page="+str(i)
+    url_list.append(url)
+
+for url in url_list:
+    uClient = uReq(url)
+    page_html = uClient.read()
+    uClient.close()
+    page_soup = soup(page_html, "html.parser")
+    Location = []
+    Area = []
+    Price = []
+
+    container1 = page_soup.findAll("div", {"class": "fsKEtj"})
+    for container in container1:
+        try:
+            tmp = container.a.get_text().replace(',', '')
+        except AttributeError:
+            tmp = "Null"
+        Location.append(tmp)
+
+    container2 = page_soup.findAll("div", {'class': 'crBzhV'})
+    for container in container2:
+        try:
+            tmp = container.li.a.get_text().strip('Built-up :').replace(',','')
+        except AttributeError:
+            tmp = "Null"
+        Area.append(tmp)
+
+    container3 = page_soup.findAll("div", {"class": "hzTrLN"})
+    for contain in container3:
+        try:
+            tmp = contain.li.get_text().strip('RM').replace(',' , '')
+        except AttributeError:
+            tmp = "Null"
+        Price.append(tmp)
+
+    df = pd.DataFrame(list(zip(Location, Area, Price)),
+                      columns = ['Location', 'Area', 'Price'])
+    print(df)
+    df.to_csv('My.csv' , sep = ',' , index = False , mode = 'a' , header = False)
